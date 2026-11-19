@@ -73,6 +73,21 @@ export default function App() {
     });
   }, [selected]);
 
+  // With exactly one photo selected, the recipe being edited IS that photo's recipe: editing
+  // applies it automatically. Batch apply is for pushing one recipe onto many photos.
+  const [recipe, setRecipe] = useState<Recipe>({ name: AS_SHOT });
+  const lastRecipe = useRef(recipe);
+  useEffect(() => {
+    const changed = lastRecipe.current !== recipe;
+    lastRecipe.current = recipe;
+    if (selected.size !== 1) return;
+    const path = [...selected.keys()][0];
+    setAssigned((prev) => {
+      if (!changed && prev.has(path)) return prev;
+      return new Map(prev).set(path, recipe);
+    });
+  }, [recipe, selected]);
+
   // settings.json: last folder, view / sort of the photo grids
   const [settings, setSettings] = useState<Settings | null>(null);
   useEffect(() => {
@@ -104,7 +119,6 @@ export default function App() {
 
   // recipes
   const [recipes, setRecipes] = useState<RecipeEntry[]>([]);
-  const [recipe, setRecipe] = useState<Recipe>({ name: AS_SHOT });
   const reloadRecipes = useCallback(async () => setRecipes(await api.listRecipes()), []);
   useEffect(() => {
     reloadRecipes();

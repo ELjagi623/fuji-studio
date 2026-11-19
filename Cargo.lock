@@ -978,7 +978,7 @@ dependencies = [
 
 [[package]]
 name = "fuji-ptp"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "serde",
@@ -988,7 +988,7 @@ dependencies = [
 
 [[package]]
 name = "fuji-studio"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "fuji-ptp",
@@ -1003,7 +1003,7 @@ dependencies = [
 
 [[package]]
 name = "fujictl"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -2693,7 +2693,7 @@ checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "raf"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
 ]
