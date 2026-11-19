@@ -146,6 +146,13 @@ impl Recipe {
             set(p, idx::EXPOSURE_BIAS, (ev * 1000.0).round() as i32, "exposure")?;
         }
         if let Some(dr) = self.dynamic_range {
+            // The RAW was exposed for the DR it was shot with: asking for MORE than that
+            // (e.g. DR400 on a DR200 shot) makes the camera render garbage (a strong green
+            // cast, verified on X-Pro3). X RAW Studio doesn't allow it either, so cap it.
+            let dr = match p.get(idx::DYNAMIC_RANGE) {
+                Some(shot) if [100, 200, 400].contains(&shot) && dr > shot => shot,
+                _ => dr,
+            };
             set(p, idx::DYNAMIC_RANGE, dr, "dynamic_range")?;
         }
         if let Some(g) = &self.grain {
