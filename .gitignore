@@ -1,0 +1,14 @@
+/target
+/out
+*.RAF
+*.raf
+*.d185
+node_modules/
+/app/dist
+
+# official FUJIFILM product photos (copyright FUJIFILM) - fetched by `npm run fetch-cameras`, not committed
+/app/src/assets/cameras/
+
+# agent notes (not published)
+CLAUDE.md
+.claude/

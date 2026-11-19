@@ -1,0 +1,14 @@
+{
+  "name": "classic-neg-warm",
+  "film": "classic-neg",
+  "dynamic_range": 200,
+  "grain": "weak",
+  "color_chrome": "strong",
+  "white_balance": "auto",
+  "wb_shift_r": 2,
+  "wb_shift_b": -4,
+  "highlight": -1,
+  "shadow": -1,
+  "color": 2,
+  "noise_reduction": -4
+}

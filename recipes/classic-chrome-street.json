@@ -1,0 +1,11 @@
+{
+  "name": "classic-chrome-street",
+  "film": "classic-chrome",
+  "grain": "weak",
+  "color_chrome": "strong",
+  "highlight": 1,
+  "shadow": 1,
+  "color": -1,
+  "sharpness": 0,
+  "noise_reduction": -2
+}
