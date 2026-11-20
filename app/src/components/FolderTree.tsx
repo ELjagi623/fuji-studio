@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api, DirNode } from "../api";
-import { L } from "../i18n";
+import { isMac, L } from "../i18n";
 
 /** Quick-place labels come from the backend in Chinese. */
 const PLACE_EN: Record<string, string> = { 图片: "Pictures", 桌面: "Desktop", 下载: "Downloads", 主目录: "Home" };
@@ -164,7 +164,7 @@ export function FolderTree({ current, onPick, countUnder }: Props) {
     <div className="tree">
       <div className="treehead">{L("常用位置", "Quick access")}</div>
       {places.map((n) => renderNode(n, 0))}
-      <div className="treehead">{L("此电脑", "This PC")}</div>
+      <div className="treehead">{isMac ? L("磁盘与位置", "Locations") : L("此电脑", "This PC")}</div>
       {drives.map((n) => renderNode(n, 0))}
     </div>
   );

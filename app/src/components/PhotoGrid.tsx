@@ -161,9 +161,9 @@ export function PhotoGrid({ entries, isSelected, onSelect, prefs, onPrefs, camer
     requestAnimationFrame(tick);
   }
 
-  /** Ctrl + mouse wheel steps through the icon sizes, like Explorer. */
+  /** Ctrl (⌘ on Mac) + mouse wheel steps through the icon sizes, like Explorer / Finder. */
   function onWheel(ev: React.WheelEvent) {
-    if (!ev.ctrlKey) return;
+    if (!ev.ctrlKey && !ev.metaKey) return;
     const i = VIEWS.findIndex((v) => v.id === view);
     const next = VIEWS[Math.min(VIEWS.length - 1, Math.max(0, i + (ev.deltaY < 0 ? -1 : 1)))];
     if (next.id !== view) onPrefs({ view: next.id });

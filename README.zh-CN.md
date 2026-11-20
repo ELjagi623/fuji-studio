@@ -7,7 +7,7 @@
 **用相机自己的引擎，快速转换富士 RAW。**
 
 [![Release](https://img.shields.io/github/v/release/ELjagi623/fuji-studio?style=flat-square)](https://github.com/ELjagi623/fuji-studio/releases)
-![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS-blue?style=flat-square)
 ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square)
 
 [功能](#功能) · [快速开始](#快速开始) · [使用方法](#使用方法) · [从源码构建](#从源码构建) · [English](README.md)
@@ -46,8 +46,11 @@ Fuji Studio 通过 USB 把 RAF 发给富士相机，由相机自己的处理器�
 
 - `FujiStudio_x.y.z_x64-setup.exe`：安装版
 - `FujiStudio_x.y.z_x64_portable.exe`：免安装单文件版
+- `FujiStudio_x.y.z_aarch64.dmg`：macOS（Apple 芯片）
 
 需要 Windows 10/11（64 位）。Windows 11 自带 WebView2 运行库，缺少时会自动安装。
+
+**macOS**（Apple 芯片，macOS 11 及以上）：打开 `.dmg`，把 Fuji Studio 拖进「应用程序」。App 没有经过公证，第一次打开时 macOS 可能提示「已损坏」或「无法验证开发者」，在终端运行一次 `xattr -cr "/Applications/Fuji Studio.app"`，或者右键 App 选择「打开」即可。如果连不上相机，请先退出「照片」「图像捕捉」（它们会在相机插入时抢占相机），再拔插 USB 线。macOS 版是新增的，遇到问题欢迎在 [Issues](https://github.com/ELjagi623/fuji-studio/issues) 反馈。
 
 ### 2. 设置相机
 
@@ -77,7 +80,7 @@ Fuji Studio 通过 USB 把 RAF 发给富士相机，由相机自己的处理器�
 
 ## 从源码构建
 
-需要 [Rust](https://rustup.rs/)、[Node.js](https://nodejs.org/) 20+，以及 Windows 上的 [Tauri 依赖](https://tauri.app/start/prerequisites/)。
+需要 [Rust](https://rustup.rs/)、[Node.js](https://nodejs.org/) 20+，以及对应平台的 [Tauri 依赖](https://tauri.app/start/prerequisites/)。macOS 上运行 `./build-mac.sh` 即可完成构建（`./build-mac.sh dev` 开发模式运行）。
 
 ```bash
 git clone https://github.com/ELjagi623/fuji-studio.git
@@ -93,7 +96,7 @@ npx tauri build         # 打包安装程序
 <details>
 <summary><strong>工作原理</strong></summary>
 
-Fuji Studio 通过 Windows 便携设备（WPD）和相机进行 PTP 通信，无需更换驱动。每张照片的流程：
+Fuji Studio 通过 Windows 便携设备（WPD，Windows）或 libusb（macOS）和相机进行 PTP 通信，无需更换驱动。每张照片的流程：
 
 1. 用富士私有指令（`0x900C` / `0x900D`）上传 RAF
 2. 读取转换参数（`0xD185`），只修改配方里改动的项，再写回

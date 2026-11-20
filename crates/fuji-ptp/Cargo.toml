@@ -7,6 +7,17 @@ edition.workspace = true
 anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+rusb = { version = "0.9", optional = true }
+
+[features]
+# Build the libusb backend on any OS (it is always built on macOS/Linux). Lets the
+# backend be compile-checked from Windows: cargo check -p fuji-ptp --features libusb,rusb/vendored
+libusb = ["dep:rusb"]
+
+# macOS / Linux: PTP over libusb. Vendored = libusb is compiled in and linked statically,
+# so the finished app has no libusb dylib to ship or install.
+[target.'cfg(not(windows))'.dependencies]
+rusb = { version = "0.9", features = ["vendored"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.61", features = [

@@ -101,7 +101,7 @@ struct CameraStatus {
 
 #[tauri::command]
 async fn camera_status(state: State<'_, AppState>) -> CmdResult<CameraStatus> {
-    let devs = blocking(fuji_ptp::wpd::list_devices).await?;
+    let devs = blocking(fuji_ptp::platform::list_devices).await?;
     let dev = devs.into_iter().find(|d| d.is_fujifilm());
     let info = state.worker.info.lock().unwrap().clone();
     // Unplugged, or re-enumerated under a new id (USB mode switched on the camera):
@@ -249,8 +249,15 @@ fn reveal(path: String) -> CmdResult<()> {
         let arg = if std::path::Path::new(&p).is_dir() { format!("\"{p}\"") } else { format!("/select,\"{p}\"") };
         std::process::Command::new("explorer").raw_arg(arg).spawn()
     };
+    // macOS: `open dir` opens the folder; `open -R file` shows the file selected in Finder.
     #[cfg(target_os = "macos")]
-    let r = std::process::Command::new("open").args(["-R", &path]).spawn();
+    let r = {
+        let mut c = std::process::Command::new("open");
+        if !std::path::Path::new(&path).is_dir() {
+            c.arg("-R");
+        }
+        c.arg(&path).spawn()
+    };
     #[cfg(not(any(windows, target_os = "macos")))]
     let r = std::process::Command::new("xdg-open").arg(&path).spawn();
     r.map(|_| ()).map_err(err)

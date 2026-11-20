@@ -1,6 +1,6 @@
 import { CameraStatus, filmName, Recipe, recipeLabel } from "../api";
 import { useState } from "react";
-import { getLang, L, Lang, photos, setLang } from "../i18n";
+import { getLang, isMac, L, Lang, MOD, photos, setLang } from "../i18n";
 import type { JobState } from "../pages/RenderPage";
 import { ModeActions, RAW_CONV_MENU } from "./ModeGuide";
 import { CameraImage } from "./CameraImage";
@@ -103,10 +103,10 @@ export function Sidebar({ camera, probeError, selectedCount, appliedCount, recip
 
       <div className="sidefoot">
         <div className="undoredo">
-          <button onClick={onUndo} disabled={!canUndo} title={L("撤销 (Ctrl+Z)", "Undo (Ctrl+Z)")}>
+          <button onClick={onUndo} disabled={!canUndo} title={L(`撤销 (${MOD}Z)`, `Undo (${MOD}Z)`)}>
             <UndoIcon />
           </button>
-          <button onClick={onRedo} disabled={!canRedo} title={L("重做 (Ctrl+Y)", "Redo (Ctrl+Y)")}>
+          <button onClick={onRedo} disabled={!canRedo} title={isMac ? L("重做 (⇧⌘Z)", "Redo (⇧⌘Z)") : L("重做 (Ctrl+Y)", "Redo (Ctrl+Y)")}>
             <UndoIcon redo />
           </button>
         </div>

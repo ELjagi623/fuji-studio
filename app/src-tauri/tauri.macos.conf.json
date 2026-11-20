@@ -1,0 +1,10 @@
+{
+  "identifier": "com.fujistudio.desktop",
+  "bundle": {
+    "category": "Photography",
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "signingIdentity": "-"
+    }
+  }
+}

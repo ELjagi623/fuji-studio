@@ -26,7 +26,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// List portable (WPD) devices seen by Windows
+    /// List camera devices seen by the OS transport (WPD on Windows, libusb on macOS/Linux)
     Devices,
     /// Show PTP DeviceInfo and check RAW-conversion support
     Info,
@@ -116,10 +116,9 @@ fn parse_num(s: &str) -> Result<u32> {
     u32::from_str_radix(t, 16).with_context(|| format!("bad hex number '{s}'"))
 }
 
-#[cfg(windows)]
-fn open_camera(cli: &Cli) -> Result<FujiCamera<fuji_ptp::wpd::WpdTransport>> {
-    use fuji_ptp::wpd;
-    let devs = wpd::list_devices()?;
+fn open_camera(cli: &Cli) -> Result<FujiCamera<fuji_ptp::platform::CameraTransport>> {
+    use fuji_ptp::platform;
+    let devs = platform::list_devices()?;
     let pick = match &cli.device {
         Some(q) => {
             let q = q.to_ascii_lowercase();
@@ -131,37 +130,18 @@ fn open_camera(cli: &Cli) -> Result<FujiCamera<fuji_ptp::wpd::WpdTransport>> {
     };
     let Some(d) = pick else {
         bail!(
-            "no Fujifilm camera found ({} portable devices). Turn the camera on, set \
+            "no Fujifilm camera found ({} candidate devices via {}). Turn the camera on, set \
              CONNECTION SETTING > PC CONNECTION MODE > USB RAW CONV./BACKUP RESTORE, and use a data cable.",
-            devs.len()
+            devs.len(),
+            platform::NAME
         );
     };
-    let t = wpd::WpdTransport::open(d)?;
+    let t = platform::CameraTransport::open(d)?;
     eprintln!("connected: {}", t.describe());
     let mut cam = FujiCamera::new(t);
     cam.verbose = cli.verbose;
     cam.open_session()?;
     Ok(cam)
-}
-
-#[cfg(not(windows))]
-fn open_camera(_cli: &Cli) -> Result<FujiCamera<NoTransport>> {
-    bail!("only the Windows WPD transport is implemented so far")
-}
-
-#[cfg(not(windows))]
-struct NoTransport;
-#[cfg(not(windows))]
-impl Transport for NoTransport {
-    fn describe(&self) -> String {
-        String::new()
-    }
-    fn driver_manages_session(&self) -> bool {
-        false
-    }
-    fn execute(&mut self, _: u16, _: &[u32], _: DataPhase<'_>, _: fuji_ptp::transport::Progress<'_>) -> Result<fuji_ptp::Response> {
-        unreachable!()
-    }
 }
 
 fn expand_inputs(inputs: &[PathBuf]) -> Result<Vec<PathBuf>> {
@@ -222,22 +202,19 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     match &cli.cmd {
         Cmd::Devices => {
-            #[cfg(windows)]
-            {
-                let devs = fuji_ptp::wpd::list_devices()?;
-                if devs.is_empty() {
-                    println!("no portable devices");
-                }
-                for d in devs {
-                    println!(
-                        "{} {} | {} | {}\n    {}",
-                        if d.is_fujifilm() { "*" } else { " " },
-                        d.friendly_name,
-                        d.manufacturer,
-                        d.description,
-                        d.id
-                    );
-                }
+            let devs = fuji_ptp::platform::list_devices()?;
+            if devs.is_empty() {
+                println!("no camera devices ({})", fuji_ptp::platform::NAME);
+            }
+            for d in devs {
+                println!(
+                    "{} {} | {} | {}\n    {}",
+                    if d.is_fujifilm() { "*" } else { " " },
+                    d.friendly_name,
+                    d.manufacturer,
+                    d.description,
+                    d.id
+                );
             }
         }
         Cmd::Info => {

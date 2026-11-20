@@ -7,7 +7,7 @@
 **Render Fujifilm RAW files with your camera's own engine, fast.**
 
 [![Release](https://img.shields.io/github/v/release/ELjagi623/fuji-studio?style=flat-square)](https://github.com/ELjagi623/fuji-studio/releases)
-![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS-blue?style=flat-square)
 ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square)
 
 [Features](#features) · [Getting started](#getting-started) · [Usage](#usage) · [Build from source](#build-from-source) · [中文](README.zh-CN.md)
@@ -46,8 +46,11 @@ Download the latest version from [Releases](https://github.com/ELjagi623/fuji-st
 
 - `FujiStudio_x.y.z_x64-setup.exe`: installer
 - `FujiStudio_x.y.z_x64_portable.exe`: single file, no install needed
+- `FujiStudio_x.y.z_aarch64.dmg`: macOS (Apple Silicon)
 
 Windows 10/11 (64-bit) is required. The WebView2 runtime ships with Windows 11 and is installed automatically if it's missing.
+
+**macOS** (Apple Silicon, macOS 11 or later): open the `.dmg` and drag Fuji Studio to Applications. The app is not notarized, so the first time macOS may say it is damaged or from an unidentified developer. Run `xattr -cr "/Applications/Fuji Studio.app"` once, or right-click the app and choose Open. If the camera can't be opened, quit Photos / Image Capture (they grab the camera when it is plugged in), then unplug and re-plug the cable. The macOS version is new; please report problems in [Issues](https://github.com/ELjagi623/fuji-studio/issues).
 
 ### 2. Set up the camera
 
@@ -77,7 +80,7 @@ Developed and tested on the **X-Pro3** (firmware 2.00). The same protocol is use
 
 ## Build from source
 
-Prerequisites: [Rust](https://rustup.rs/), [Node.js](https://nodejs.org/) 20+, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for Windows.
+Prerequisites: [Rust](https://rustup.rs/), [Node.js](https://nodejs.org/) 20+, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform. On macOS, `./build-mac.sh` does the whole build (`./build-mac.sh dev` to run it).
 
 ```bash
 git clone https://github.com/ELjagi623/fuji-studio.git
@@ -93,7 +96,7 @@ The repository also contains `fujictl`, a command-line tool for testing the came
 <details>
 <summary><strong>How it works</strong></summary>
 
-Fuji Studio talks PTP to the camera through Windows Portable Devices, so no driver changes are needed. For each photo it:
+Fuji Studio talks PTP to the camera through Windows Portable Devices (Windows) or libusb (macOS), so no driver changes are needed. For each photo it:
 
 1. uploads the RAF with Fujifilm's vendor operations (`0x900C` / `0x900D`)
 2. reads the conversion profile (`0xD185`), patches only the fields your recipe changes, and writes it back

@@ -12,3 +12,5 @@ node_modules/
 # agent notes (not published)
 CLAUDE.md
 .claude/
+
+.DS_Store

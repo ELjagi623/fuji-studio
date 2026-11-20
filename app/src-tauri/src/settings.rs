@@ -58,6 +58,17 @@ fn hidden(entry: &std::fs::DirEntry) -> bool {
             }
         }
     }
+    // Finder hides folders flagged UF_HIDDEN (e.g. ~/Library) even without a leading dot.
+    #[cfg(target_os = "macos")]
+    {
+        use std::os::macos::fs::MetadataExt;
+        const UF_HIDDEN: u32 = 0x8000;
+        if let Ok(m) = entry.metadata() {
+            if m.st_flags() & UF_HIDDEN != 0 {
+                return true;
+            }
+        }
+    }
     false
 }
 
@@ -107,7 +118,27 @@ pub fn roots(places: &[(&str, Option<PathBuf>)]) -> Vec<DirNode> {
             out.push(DirNode { name: format!("{}:", letter as char), path: root.clone(), has_children: has_subdirs(p), kind: "drive" });
         }
     }
-    #[cfg(not(windows))]
+    // macOS: the startup disk, then everything mounted under /Volumes (external drives,
+    // SD card readers, network shares), like the Finder sidebar's "Locations".
+    #[cfg(target_os = "macos")]
+    {
+        out.push(DirNode { name: "Macintosh HD".into(), path: "/".into(), has_children: true, kind: "drive" });
+        let mut vols: Vec<_> = std::fs::read_dir("/Volumes")
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter(|e| {
+                // /Volumes/<startup disk> is a symlink back to "/": already listed above
+                !e.file_type().map(|t| t.is_symlink()).unwrap_or(false) && e.path().is_dir() && !hidden(e)
+            })
+            .collect();
+        vols.sort_by_key(|e| e.file_name().to_string_lossy().to_lowercase());
+        for e in vols {
+            let p = e.path();
+            out.push(DirNode { name: e.file_name().to_string_lossy().into(), has_children: has_subdirs(&p), path: p.to_string_lossy().into(), kind: "drive" });
+        }
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
     out.push(DirNode { name: "/".into(), path: "/".into(), has_children: true, kind: "drive" });
     out
 }
@@ -153,6 +184,20 @@ mod tests {
         assert_eq!(names, ["A", "b", "c"]);
         assert!(l[0].has_children && !l[1].has_children);
         std::fs::remove_dir_all(&t).unwrap();
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn mac_roots_and_hidden_folders() {
+        let home = PathBuf::from(std::env::var("HOME").unwrap());
+        let r = roots(&[("主目录", Some(home.clone()))]);
+        assert!(r.iter().any(|n| n.kind == "place" && n.path == home.to_string_lossy()));
+        // the startup disk appears exactly once (the /Volumes/<name> symlink back to "/" is skipped)
+        assert_eq!(r.iter().filter(|n| n.path == "/").count(), 1, "{r:?}");
+        assert!(r.iter().any(|n| n.name == "Macintosh HD" && n.kind == "drive"));
+        // ~/Library carries the Finder "hidden" flag
+        let names: Vec<_> = list_dirs(&home).unwrap().into_iter().map(|n| n.name).collect();
+        assert!(!names.contains(&"Library".to_string()), "{names:?}");
     }
 
     #[test]

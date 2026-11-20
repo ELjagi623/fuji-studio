@@ -1,10 +1,10 @@
-//! Camera worker thread. The WPD/COM camera handle is not Send, so a single
-//! thread owns it and processes jobs serially (the camera can only do one
+//! Camera worker thread. The camera handle (a COM object on Windows) is not Send, so a
+//! single thread owns it and processes jobs serially (the camera can only do one
 //! conversion at a time anyway).
 
 use crate::settings::unix_date;
 use anyhow::{anyhow, bail, Context, Result};
-use fuji_ptp::wpd::{self, WpdTransport};
+use fuji_ptp::platform::{self, CameraTransport};
 use fuji_ptp::presets::CameraPreset;
 use fuji_ptp::{FujiCamera, Profile, Recipe, RenderQuality, Stage};
 use serde::Serialize;
@@ -22,7 +22,7 @@ pub struct CamInfo {
     pub serial: String,
     /// Camera is in USB RAW CONV mode (or at least looks like it; see `looks_raw_conv`).
     pub raw_conv: bool,
-    /// WPD device id. Switching the camera's USB mode re-enumerates it under a new id,
+    /// OS device id (WPD id / `usb:bus:addr:vid:pid`). Switching the camera's USB mode re-enumerates it under a new id,
     /// so `camera_status` uses this to notice a mode switch it didn't see as a disconnect.
     pub device_id: String,
 }
@@ -135,7 +135,7 @@ impl Worker {
         std::thread::Builder::new()
             .name("camera".into())
             .spawn(move || {
-                wpd::com_init();
+                platform::com_init();
                 let mut st = State {
                     undo: Default::default(),
                     backed_up: Vec::new(),
@@ -196,7 +196,7 @@ struct State {
     undo: std::collections::HashMap<u8, CameraPreset>,
     /// cameras (device folder names) already backed up this session
     backed_up: Vec<String>,
-    cam: Option<FujiCamera<WpdTransport>>,
+    cam: Option<FujiCamera<CameraTransport>>,
     /// RAF currently loaded in camera memory + its base profile (skip re-upload for previews)
     loaded: Option<(PathBuf, Profile)>,
     info: Arc<Mutex<Option<CamInfo>>>,
@@ -213,12 +213,12 @@ fn file_tag(recipe: &Recipe) -> String {
     t.chars().map(|c| if c.is_alphanumeric() || c == '-' { c } else { '_' }).collect()
 }
 
-fn open_camera() -> Result<(FujiCamera<WpdTransport>, String)> {
-    let dev = wpd::list_devices()?
+fn open_camera() -> Result<(FujiCamera<CameraTransport>, String)> {
+    let dev = platform::list_devices()?
         .into_iter()
         .find(|d| d.is_fujifilm())
         .ok_or_else(|| anyhow!("未检测到富士相机"))?;
-    let mut cam = FujiCamera::new(WpdTransport::open(&dev)?);
+    let mut cam = FujiCamera::new(CameraTransport::open(&dev)?);
     cam.open_session()?;
     Ok((cam, dev.id))
 }
@@ -247,7 +247,7 @@ impl State {
         }
     }
 
-    fn cam(&mut self) -> Result<&mut FujiCamera<WpdTransport>> {
+    fn cam(&mut self) -> Result<&mut FujiCamera<CameraTransport>> {
         if self.cam.is_none() {
             let (mut cam, device_id) = open_camera()?;
             let di = cam.device_info()?;

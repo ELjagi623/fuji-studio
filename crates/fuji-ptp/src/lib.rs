@@ -3,10 +3,14 @@
 pub mod camera;
 pub mod codes;
 pub mod data;
+pub mod platform;
 pub mod presets;
 pub mod profile;
+pub mod ptp_usb;
 pub mod recipe;
 pub mod transport;
+#[cfg(any(not(windows), feature = "libusb"))]
+pub mod usb;
 #[cfg(windows)]
 pub mod wpd;
 

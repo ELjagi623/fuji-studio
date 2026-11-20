@@ -1,0 +1,53 @@
+# Builds the macOS (Apple Silicon) app on GitHub's M1 runners and uploads the .dmg / .zip.
+# Run it from the Actions tab ("Run workflow"), or push a tag like v0.1.2.
+name: build-macos
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: macos-14 # Apple Silicon (arm64)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Rust tests (PTP framing, recipes, RAF)
+        run: cargo test -p fuji-ptp -p raf
+
+      - name: Install frontend deps
+        working-directory: app
+        run: npm ci
+
+      - name: Fetch camera product photos (optional)
+        working-directory: app
+        run: npm run fetch-cameras || true
+
+      - name: Build app
+        working-directory: app
+        run: npx tauri build --bundles app,dmg
+
+      - name: Zip the .app (keeps the ad-hoc signature intact)
+        run: |
+          cd target/release/bundle/macos
+          ditto -c -k --keepParent "Fuji Studio.app" "$GITHUB_WORKSPACE/FujiStudio-macos-arm64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FujiStudio-macos-arm64
+          path: |
+            FujiStudio-macos-arm64.zip
+            target/release/bundle/dmg/*.dmg

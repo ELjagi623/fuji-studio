@@ -25,6 +25,11 @@ function applyDocument() {
 
 export const getLang = () => lang;
 
+/** Running on macOS (WKWebView reports "MacIntel" even on Apple Silicon). */
+export const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform || navigator.userAgent);
+/** Label of the primary shortcut modifier. */
+export const MOD = isMac ? "⌘" : "Ctrl+";
+
 /** Pick the string for the current language. */
 export function L(zh: string, en: string): string {
   return lang === "en" ? en : zh;

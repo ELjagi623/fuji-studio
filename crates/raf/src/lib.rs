@@ -123,6 +123,28 @@ pub fn scan_dir(dir: &Path, recursive: bool) -> Result<Vec<PathBuf>> {
 mod tests {
     use super::*;
 
+    /// Folder names with spaces / Chinese, nested folders, and the `._X.RAF` AppleDouble
+    /// junk macOS writes next to files on exFAT/FAT cards and drives.
+    #[test]
+    fn scan_handles_unicode_paths_and_appledouble_junk() {
+        let mut raf = vec![0u8; HEADER_LEN];
+        raf[..16].copy_from_slice(MAGIC);
+        raf[0x1C..0x23].copy_from_slice(b"X-Pro3\0");
+        let root = std::env::temp_dir().join(format!("raf-scan-{}", std::process::id())).join("照片 test");
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("子文件夹 2")).unwrap();
+        std::fs::write(root.join("DSCF0001.RAF"), &raf).unwrap();
+        std::fs::write(root.join("子文件夹 2").join("DSCF0002.raf"), &raf).unwrap();
+        std::fs::write(root.join("._DSCF0001.RAF"), [0u8, 5, 22, 7, 0, 2, 0, 0, 0]).unwrap(); // AppleDouble header
+        std::fs::write(root.join(".DS_Store"), b"x").unwrap();
+        let flat = scan_dir(&root, false).unwrap();
+        assert_eq!(flat, vec![root.join("DSCF0001.RAF")]);
+        let deep = scan_dir(&root, true).unwrap();
+        assert_eq!(deep.len(), 2);
+        assert!(deep.iter().all(|p| !p.file_name().unwrap().to_string_lossy().starts_with("._")));
+        std::fs::remove_dir_all(root.parent().unwrap()).unwrap();
+    }
+
     #[test]
     fn rejects_bad_magic() {
         let b = vec![0u8; HEADER_LEN];
